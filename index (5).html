@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Метод Гаусса</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      .jumbotron {
+        background-color: #f9f9f9;
+        padding: 20px;
+        margin-top: 20px;
+      }
+
+      .result-heading {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+
+      .footer {
+        padding: 100px 20px 20px 100px;
+        border-top: 2px солид #000000;
+        margin-top: 120px;
+      }
+
+      .footer p {
+        font-size: 18px;
+      }
+      .footer span {
+        font-style: italic;
+      }
+
+      .authors h3 {
+        margin-bottom: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Метод Гаусса</h1>
+      <div class="row">
+        <div class="col-md-6">
+          <h3>Ввод</h3>
+          <textarea id="matrixInput" class="form-control" rows="8">3 6 3 24
+2 1 3 13
+3 2 4 19</textarea>
+        </div>
+        <div class="col-md-6">
+          <h3>Матрица</h3>
+          <div id="result" class="jumbotron"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
+          <h3 class="result-heading">Матрица в улучшенной форме</h3>
+          <p>
+            <input type="checkbox" id="inputAdvancedOutput" /> Показать шаги
+            вычислений
+          </p>
+          <div id="result2" class="jumbotron"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
+          <h3 class="result-heading">Результаты</h3>
+          <div id="result3" class="jumbotron"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="authors">
+        <h3>Сделано от чистого сердца студентами группы б-УПТС-21:</h3>
+        <p><span>Бригадир</span> - Доброродов Ян Олегович</p>
+        <p><span>Программист1</span> - Когай Никита Сергеевич</p>
+        <p><span>Программист2</span> - Евсеев Дмитрий Сергеевич</p>
+        <p><span>Дизайнер</span> - Елисеев Данила Дмитриевич</p>
+      </div>
+    </div>
+
+    <script>
+      var gaussian = {
+        tools: {
+          // Вспомогательная функция для очистки массива от пустых элементов
+          cleanArray: function (arr) {
+            for (var i = arr.length - 1; i >= 0; i--) {
+              if (arr[i] === '' || arr[i] === undefined || arr[i] === null) {
+                arr.splice(i, 1); // Удаляем пустые элементы
+              }
+            }
+            return arr; // Возвращаем очищенный массив
+          },
+        },
+        ui: {
+          // Функция для очистки содержимого контейнера
+          clearContent: function (containerid) {
+            document.getElementById(containerid).innerText = '';
+          },
+          // Функция для вывода матрицы в контейнер
+          writeMatrix: function (containerid, mtr) {
+            for (var i = 0; i < mtr.length; i++) {
+              var row = mtr[i];
+              for (var j = 0; j < row.length; j++) {
+                  if (row[j] % 1 !== 0) {
+                      document.getElementById(containerid).innerHTML += row[j].toFixed(4) + ' ';
+                  }
+                  else {
+                      document.getElementById(containerid).innerHTML += row[j] + ' ';
+                  }
+                if (j === row.length - 2) {
+                  document.getElementById(containerid).innerHTML += ' = ';
+                }
+              }
+              document.getElementById(containerid).innerText += '\n';
+            }
+            document.getElementById(containerid).innerText += '\n';
+          },
+          // Функция для вывода результата решения матрицы
+          writeResult: function (containerid, row) {
+            for (var i = 0; i < row.length; i++) {
+                var identifier = 'x' + (i + 1);
+              if (!isNaN(parseFloat(row[i]))) {
+                   if (row[i] % 1 !== 0) {
+                        document.getElementById(containerid).innerText +=
+                            identifier + ' = ' + row[i].toFixed(2) + '\n';
+                   }
+                  else {
+                        document.getElementById(containerid).innerText +=
+                          identifier + ' = ' + row[i] + '\n';
+                  }
+              }
+
+
+            }
+          },
+          // Функция для преобразования строки в матрицу
+          stringToMatrix: function (str) {
+            var result = str
+              .trim() // Убираем пробелы в начале и в конце строки
+              .replace(/\+/g, '') // Убираем плюсы
+              .replace(/\=/g, '') // Убираем знаки равенства
+              .split('\n'); // Разделяем строки
+            for (var i = 0; i < result.length; i++) {
+              result[i] = result[i].split(' '); // Разделяем элементы строки по пробелам
+              result[i] = gaussian.tools.cleanArray(result[i]); // Очищаем строку от пустых элементов
+              for (var j = 0; j < result[i].length; j++) {
+                result[i][j] = JSON.parse(result[i][j]); // Преобразуем элементы в числа
+              }
+            }
+            return result; // Возвращаем полученную матрицу
+          },
+        },
+        calculator: {
+          // Функция для проверки корректности матрицы
+          validateMatrix: function (mtr) {
+            return (
+              mtr != null &&
+              mtr != undefined &&
+              mtr.length + 1 === mtr[0].length // Проверяем, что количество строк на единицу меньше количества столбцов
+            );
+          },
+          // Функция для обмена строк матрицы
+          swapRows: function (mtr, row1, row2) {
+            var temp = mtr[row1];
+            mtr[row1] = mtr[row2];
+            mtr[row2] = temp;
+          },
+          // Функция для вычисления новой строки путем вычитания одной строки из другой
+          calcRows: function (row1, row2, id) {
+            var result = [];
+            var ratio = row2[id] / row1[id]; // Вычисляем коэффициент для вычитания
+            for (var i = 0; i < row1.length; i++) {
+              result.push(row2[i] - ratio * row1[i]); // Вычитаем строки
+            }
+            return result;
+          },
+          // Функция для приведения матрицы к треугольной форме
+          calculateMatrix: function (mtr, outputId, advancedOutput) {
+            var runner = 0; // Указатель текущей строки
+            var printedStep = 1; // Счетчик шагов
+            var originalMatrix;
+
+            while (runner < mtr.length - 1) {
+              if (mtr[runner][runner] === 0) { // Если ведущий элемент равен нулю
+                for (var i = runner + 1; i < mtr.length; i++) {
+                  if (mtr[i][runner] !== 0) {
+                    gaussian.calculator.swapRows(mtr, runner, i); // Меняем строки местами
+                    break;
+                  }
+                }
+              }
+
+              for (var i = runner + 1; i < mtr.length; i++) {
+                if (advancedOutput) {
+                  originalMatrix = mtr.map(function (arr) {
+                    return arr.slice(); // Копируем матрицу для вывода шага
+                  });
+                }
+                mtr[i] = gaussian.calculator.calcRows(
+                  mtr[runner],
+                  mtr[i],
+                  runner
+                );
+
+                if (advancedOutput) {
+                  document.getElementById(outputId).innerText +=
+                    'Шаг ' + printedStep + ':\n';
+                  document.getElementById(outputId).innerText +=
+                    'Вычитание строки ' +
+                    (runner + 1) +
+                    ' из ' +
+                    (i + 1) +
+                    '\n';
+                  gaussian.ui.writeMatrix(outputId, originalMatrix); // Выводим промежуточную матрицу
+                  printedStep++;
+                }
+              }
+              runner++;
+            }
+
+            document.getElementById(outputId).innerText +=
+              'Полученная матрица:\n';
+            gaussian.ui.writeMatrix(outputId, mtr); // Выводим окончательную матрицу
+          },
+          // Функция для нахождения результатов из треугольной матрицы
+          resolveMatrixResults: function (mtr) {
+            var mtrResults = new Array(mtr[0].length - 1);
+
+            for (var i = mtr.length - 1; i >= 0; i--) {
+              var row = mtr[i];
+              var rowResult = row[row.length - 1];
+              for (var j = row.length - 2; j > i; j--) {
+                rowResult -= row[j] * mtrResults[j]; // Вычитаем известные переменные
+              }
+              mtrResults[i] = rowResult / row[i]; // Находим значение переменной
+            }
+            return mtrResults;
+          },
+        },
+        // Функция для выполнения всех этапов расчета матрицы
+        calculateWholeMatrix: function (
+          containerInputMatrix,
+          containerOriginalMatrix,
+          containerEliminatedMatrix,
+          containerResult,
+          advancedOutput
+        ) {
+          gaussian.ui.clearContent(containerOriginalMatrix);
+          gaussian.ui.clearContent(containerEliminatedMatrix);
+          gaussian.ui.clearContent(containerResult);
+
+          var matrix = gaussian.ui.stringToMatrix(
+            document.getElementById(containerInputMatrix).value
+          );
+
+          if (gaussian.calculator.validateMatrix(matrix)) { // Проверяем корректность матрицы
+            gaussian.ui.writeMatrix(containerOriginalMatrix, matrix); // Выводим исходную матрицу
+            gaussian.calculator.calculateMatrix(
+              matrix,
+              containerEliminatedMatrix,
+              advancedOutput
+            );
+            var results = gaussian.calculator.resolveMatrixResults(matrix); // Находим результаты
+            gaussian.ui.writeResult(containerResult, results); // Выводим результаты
+          } else {
+            document.getElementById(containerEliminatedMatrix).innerText =
+              'Ваша матрица не в форме A|b.';
+          }
+        },
+      };
+
+      // Обработчик события для ввода матрицы
+      var inputMatrix = document.getElementById('matrixInput');
+      inputMatrix.addEventListener('input', function () {
+        gaussian.calculateWholeMatrix(
+          'matrixInput',
+          'result',
+          'result2',
+          'result3',
+          document.getElementById('inputAdvancedOutput').checked
+        );
+      });
+
+      // Обработчик события для переключения отображения шагов вычислений
+      var advancedOutputCheckbox = document.getElementById(
+        'inputAdvancedOutput'
+      );
+      advancedOutputCheckbox.addEventListener('change', function () {
+        gaussian.calculateWholeMatrix(
+          'matrixInput',
+          'result',
+          'result2',
+          'result3',
+          document.getElementById('inputAdvancedOutput').checked
+        );
+      });
+
+      // Начальный расчет матрицы
+      gaussian.calculateWholeMatrix(
+        'matrixInput',
+        'result',
+        'result2',
+        'result3',
+        document.getElementById('inputAdvancedOutput').checked
+      );
+    </script>
+  </body>
+</html>
